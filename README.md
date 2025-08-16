@@ -1,2 +1,1 @@
-# auth-api-mern
 Express.js authentication API for user registration and login. Handles secure password storage with bcrypt and checks for existing users. Returns user details on successful registration or login. Built for MERN stack apps, using MongoDB and Mongoose for data management.
