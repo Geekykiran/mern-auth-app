@@ -1,6 +1,13 @@
 import User from "../models/User.model.js";
 import bcrypt from "bcryptjs";
+import jwt from 'jsonwebtoken'
 
+
+function generateToken(id) {
+    return jwt.sign({ id, role: 'user' }, 'topSecret', {
+        expiresIn: '1d'
+    })
+}
 
 let register = async (req, res, next) => {
     let { username, email, password, confirmPassword } = req.body
@@ -17,7 +24,10 @@ let register = async (req, res, next) => {
             password,
             confirmPassword
         })
-        res.status(200).json({ username: newUser.username, email: newUser.email })
+
+        let token = generateToken(newUser._id)
+
+        res.status(200).json({ username: newUser.username, email: newUser.email, token })
     } catch (err) {
         res.status(500).json({ message: err.message })
     }
@@ -41,7 +51,9 @@ let login = async (req, res, next) => {
         }
 
         // return user if password is a match
-        res.status(200).json({ username: existingUser.username, email: existingUser.email })
+
+        let token = generateToken(existingUser._id)
+        res.status(200).json({ username: existingUser.username, email: existingUser.email, token })
     } catch (err) {
         res.status(500).json({ message: err.message })
     }
