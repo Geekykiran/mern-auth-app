@@ -1,8 +1,11 @@
 import React, { useState } from "react";
 import axios from "../axios/index.js";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/Auth.jsx";
 
 const Login = () => {
+  let navigate = useNavigate()
+  let { setUser, setToken } = useAuth()
   let [login, setLogin] = useState({
     email: "",
     password: "",
@@ -22,12 +25,13 @@ const Login = () => {
       setMessage("Login successful!");
       console.log(res.data);
 
-      // if backend sends token, save it
-      if (res.data.token) {
-        localStorage.setItem("token", res.data.token);
-      }
-
+      let { username, email, token } = res.data;
+      setUser({ username, email });
+      setToken(token)
+      navigate('/home')
+      
       setLogin({ email: "", password: "" });
+
     } catch (err) {
       setMessage("Invalid email or password.");
       console.error(err.message);

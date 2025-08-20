@@ -1,8 +1,11 @@
 import React, { useState } from "react";
 import axios from "../axios/index.js";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/Auth.jsx";
 
 const Register = () => {
+  let navigate = useNavigate()
+  let { setUser, setToken } = useAuth();
   let [signup, setSignup] = useState({
     username: "",
     email: "",
@@ -13,25 +16,54 @@ const Register = () => {
   let [message, setMessage] = useState("");
 
   let handleChange = (e) => {
-    let { name, value } = e.target;
+    const { name, value } = e.target;
     setSignup({ ...signup, [name]: value });
   };
 
   let handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Frontend check
     if (signup.password !== signup.confirmPassword) {
       setMessage("Passwords do not match!");
       return;
     }
 
     try {
+      // NOTE: use signup object directly, not spread as separate args
       let res = await axios.post("/register", signup);
+
       setMessage("Registration successful!");
       console.log(res.data);
+
+      let {username, email, token} = res.data
+      setUser({username, email})
+      setToken(token)
+      navigate('/home')
+
       setSignup({ username: "", email: "", password: "", confirmPassword: "" });
+
     } catch (err) {
-      setMessage("Registration failed. Try again.");
-      console.error(err.message);
+      console.error(err);
+
+      // Handle backend validation error (mongoose)
+      if (err.response && err.response.data && err.response.data.errors) {
+        let backendError = err.response.data.errors;
+
+        // Specific confirmPassword validation error
+        if (backendError.confirmPassword) {
+          setMessage(backendError.confirmPassword.message);
+        } else if (backendError.password) {
+          setMessage(backendError.password.message);
+        } else {
+          // Generic fallback
+          setMessage("Registration failed. Try again.");
+        }
+      } else if (err.response && err.response.data && err.response.data.message) {
+        setMessage(err.response.data.message);
+      } else {
+        setMessage("Something went wrong. Try again.");
+      }
     }
   };
 
@@ -41,9 +73,11 @@ const Register = () => {
         <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
           Create Account
         </h2>
+
         {message && (
           <p className="text-center text-sm text-red-600 mb-3">{message}</p>
         )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-600">
